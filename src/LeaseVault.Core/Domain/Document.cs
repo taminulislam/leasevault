@@ -126,15 +126,9 @@ public class Document
         DateTime nowUtc,
         string? comment = null)
     {
-        Guard.NotEmpty(uploadedBy, nameof(uploadedBy));
         Guard.NotEmpty(fileName, nameof(fileName));
         Guard.NotEmpty(storageKey, nameof(storageKey));
-        EnsureEditable();
-
-        if (IsLockedFor(uploadedBy))
-        {
-            throw new DocumentLockedException(CheckedOutBy!);
-        }
+        EnsureCanAddVersion(uploadedBy);
 
         if (sizeBytes <= 0)
         {
@@ -147,7 +141,7 @@ public class Document
             throw new DomainException("Uploaded content is identical to the current version.");
         }
 
-        var next = Math.Max(CurrentVersion, latest?.VersionNumber ?? 0) + 1;
+        var next = NextVersionNumber;
         var version = new DocumentVersion
         {
             DocumentId = Id,
@@ -173,6 +167,20 @@ public class Document
 
         return version;
     }
+
+    /// <summary>Fails fast (before any bytes are uploaded) when the user may not add a version.</summary>
+    public void EnsureCanAddVersion(string user)
+    {
+        Guard.NotEmpty(user, nameof(user));
+        EnsureEditable();
+
+        if (IsLockedFor(user))
+        {
+            throw new DocumentLockedException(CheckedOutBy!);
+        }
+    }
+
+    public int NextVersionNumber => Math.Max(CurrentVersion, LatestVersion?.VersionNumber ?? 0) + 1;
 
     // ---- Tags ------------------------------------------------------------------------------
 
