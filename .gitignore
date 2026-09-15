@@ -1,0 +1,45 @@
+## .NET build output
+bin/
+obj/
+out/
+publish/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+
+## IDE / user files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.swp
+*.DS_Store
+
+## Local runtime artefacts
+app.db
+app.db-shm
+app.db-wal
+*.db-journal
+App_Data/
+storage/
+logs/
+*.log
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Secrets (never commit)
+appsettings.*.local.json
+secrets.json
+.env
