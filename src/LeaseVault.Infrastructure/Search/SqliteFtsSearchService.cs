@@ -120,14 +120,21 @@ public sealed class SqliteFtsSearchService : SearchServiceBase
     private async Task<IReadOnlyDictionary<int, double>> MatchWithFtsAsync(IReadOnlyList<string> terms, CancellationToken ct)
     {
         // "lease"* AND "renew"* : quoted prefix terms, so user input can never alter the grammar.
-        var match = string.Join(" AND ", terms.Select(t => $"\"{t.Replace("\"", "\"\"")}\"*"));
-
-        var ranked = await Db.Database
-            .SqlQuery<RankedId>($"SELECT DocumentId AS Id, -bm25(DocumentSearch) AS Rank FROM DocumentSearch WHERE DocumentSearch MATCH {match}")
-            .ToListAsync(ct);
+        // All terms must match first; when nothing satisfies that, relax to any term (OR).
+        var quoted = terms.Select(t => $"\"{t.Replace("\"", "\"\"")}\"*").ToList();
+        var ranked = await RunMatchAsync(string.Join(" AND ", quoted), ct);
+        if (ranked.Count == 0 && quoted.Count > 1)
+        {
+            ranked = await RunMatchAsync(string.Join(" OR ", quoted), ct);
+        }
 
         return ranked.GroupBy(r => r.Id).ToDictionary(g => g.Key, g => g.Max(r => r.Rank));
     }
+
+    private Task<List<RankedId>> RunMatchAsync(string match, CancellationToken ct) =>
+        Db.Database
+            .SqlQuery<RankedId>($"SELECT DocumentId AS Id, -bm25(DocumentSearch) AS Rank FROM DocumentSearch WHERE DocumentSearch MATCH {match}")
+            .ToListAsync(ct);
 
     private async Task<IReadOnlyDictionary<int, double>> MatchWithLikeAsync(IReadOnlyList<string> terms, CancellationToken ct)
     {
