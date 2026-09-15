@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/TestResults/
+**/App_Data/
+**/app.db*
+.git/
+.vs/
+.idea/
+docs/
+infra/
+*.md

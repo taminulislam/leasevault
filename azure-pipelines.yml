@@ -1,0 +1,178 @@
+# LeaseVault - Azure DevOps multi-stage pipeline
+# Build -> Test -> Deploy to the App Service "staging" slot (dev environment) -> swap to production.
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - docs/*
+      - README.md
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  buildConfiguration: 'Release'
+  dotnetVersion: '8.0.x'
+  webProject: 'src/LeaseVault.Web/LeaseVault.Web.csproj'
+  azureServiceConnection: 'sc-leasevault-prod'      # ARM service connection (workload identity federation)
+  webAppName: 'app-leasevault-prod'
+  resourceGroup: 'rg-leasevault-prod'
+  stagingSlot: 'staging'
+
+stages:
+  # ---------------------------------------------------------------------------------------------
+  - stage: Build
+    displayName: Build
+    jobs:
+      - job: Build
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: UseDotNet@2
+            displayName: Use .NET SDK $(dotnetVersion)
+            inputs:
+              packageType: sdk
+              version: $(dotnetVersion)
+
+          - task: DotNetCoreCLI@2
+            displayName: Restore
+            inputs:
+              command: restore
+              projects: 'LeaseVault.sln'
+
+          - task: DotNetCoreCLI@2
+            displayName: Build
+            inputs:
+              command: build
+              projects: 'LeaseVault.sln'
+              arguments: '--configuration $(buildConfiguration) --no-restore -warnaserror'
+
+          - task: DotNetCoreCLI@2
+            displayName: Publish web app
+            inputs:
+              command: publish
+              publishWebProjects: false
+              projects: $(webProject)
+              arguments: '--configuration $(buildConfiguration) --no-build --output $(Build.ArtifactStagingDirectory)/web'
+              zipAfterPublish: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish web artifact
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/web'
+              artifact: 'web'
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish infra + db scripts
+            inputs:
+              pathToPublish: 'infra'
+              artifactName: 'infra'
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish full-text SQL script
+            inputs:
+              pathToPublish: 'db'
+              artifactName: 'db'
+
+  # ---------------------------------------------------------------------------------------------
+  - stage: Test
+    displayName: Test
+    dependsOn: Build
+    jobs:
+      - job: UnitAndIntegration
+        displayName: xUnit (SQLite in-memory)
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              packageType: sdk
+              version: $(dotnetVersion)
+
+          - task: DotNetCoreCLI@2
+            displayName: dotnet test
+            inputs:
+              command: test
+              projects: 'tests/**/*.Tests.csproj'
+              arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --logger trx'
+              publishTestResults: true
+
+          - task: PublishCodeCoverageResults@2
+            displayName: Publish coverage
+            inputs:
+              summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+
+  # ---------------------------------------------------------------------------------------------
+  - stage: DeployDev
+    displayName: Deploy to staging slot (dev)
+    dependsOn: Test
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployStaging
+        environment: 'dev'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: web
+
+                - task: AzureWebApp@1
+                  displayName: Deploy to $(stagingSlot) slot
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    appType: webApp
+                    appName: $(webAppName)
+                    deployToSlotOrASE: true
+                    resourceGroupName: $(resourceGroup)
+                    slotName: $(stagingSlot)
+                    package: '$(Pipeline.Workspace)/web/*.zip'
+                    appSettings: >-
+                      -ASPNETCORE_ENVIRONMENT Staging
+                      -Approvals__EscalationPollMinutes 15
+                      -Reminders__LeadDays 60
+
+                - script: |
+                    for i in $(seq 1 12); do
+                      code=$(curl -s -o /dev/null -w "%{http_code}" https://$(webAppName)-$(stagingSlot).azurewebsites.net/health)
+                      if [ "$code" = "200" ]; then echo "staging healthy"; exit 0; fi
+                      echo "health returned $code, retrying..."; sleep 10
+                    done
+                    exit 1
+                  displayName: Smoke test staging /health
+
+  # ---------------------------------------------------------------------------------------------
+  - stage: DeployProd
+    displayName: Swap staging -> production
+    dependsOn: DeployDev
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: SwapSlots
+        environment: 'prod'   # approval gate configured on the environment
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureAppServiceManage@0
+                  displayName: Swap $(stagingSlot) with production
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    Action: 'Swap Slots'
+                    WebAppName: $(webAppName)
+                    ResourceGroupName: $(resourceGroup)
+                    SourceSlot: $(stagingSlot)
+                    SwapWithProduction: true
+
+                - script: |
+                    code=$(curl -s -o /dev/null -w "%{http_code}" https://$(webAppName).azurewebsites.net/health)
+                    test "$code" = "200"
+                  displayName: Smoke test production /health
