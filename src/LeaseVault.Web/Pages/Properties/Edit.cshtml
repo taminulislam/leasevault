@@ -1,0 +1,24 @@
+@page "{id:int}"
+@model LeaseVault.Web.Pages.Properties.EditModel
+@{
+    ViewData["Title"] = "Edit property";
+}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-page="Index">Properties</a></li><li class="breadcrumb-item"><a asp-page="Details" asp-route-id="@Model.Property.Id">@Model.Property.Name</a></li><li class="breadcrumb-item active">Edit</li></ol></nav>
+<h1 class="h3">Edit property</h1>
+<form method="post" class="row g-3 col-lg-8">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Property.Id" />
+    <div class="col-md-8"><label asp-for="Property.Name" class="form-label"></label><input asp-for="Property.Name" class="form-control" /><span asp-validation-for="Property.Name" class="text-danger small"></span></div>
+    <div class="col-md-4"><label asp-for="Property.PropertyType" class="form-label">Type</label><input asp-for="Property.PropertyType" class="form-control" /></div>
+    <div class="col-12"><label asp-for="Property.AddressLine1" class="form-label">Address</label><input asp-for="Property.AddressLine1" class="form-control" /><span asp-validation-for="Property.AddressLine1" class="text-danger small"></span></div>
+    <div class="col-md-6"><label asp-for="Property.City" class="form-label"></label><input asp-for="Property.City" class="form-control" /></div>
+    <div class="col-md-2"><label asp-for="Property.State" class="form-label"></label><input asp-for="Property.State" class="form-control" /></div>
+    <div class="col-md-4"><label asp-for="Property.PostalCode" class="form-label">Postal code</label><input asp-for="Property.PostalCode" class="form-control" /></div>
+    <div class="col-12">
+        <label class="form-label">Units</label>
+        <div>@foreach (var u in Model.Property.Units) { <span class="badge text-bg-secondary me-1">@u.UnitNumber</span> }</div>
+        <input asp-for="NewUnitNumber" class="form-control mt-2" placeholder="Add a unit number" />
+    </div>
+    <div class="col-12"><button type="submit" class="btn btn-primary">Save</button> <a class="btn btn-link" asp-page="Details" asp-route-id="@Model.Property.Id">Cancel</a></div>
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,19 @@
+@page
+@model LeaseVault.Web.Pages.Properties.CreateModel
+@{
+    ViewData["Title"] = "New property";
+}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-page="Index">Properties</a></li><li class="breadcrumb-item active">New</li></ol></nav>
+<h1 class="h3">New property</h1>
+<form method="post" class="row g-3 col-lg-8">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="col-md-8"><label asp-for="Property.Name" class="form-label"></label><input asp-for="Property.Name" class="form-control" /><span asp-validation-for="Property.Name" class="text-danger small"></span></div>
+    <div class="col-md-4"><label asp-for="Property.PropertyType" class="form-label">Type</label><input asp-for="Property.PropertyType" class="form-control" list="types" /><datalist id="types"><option>Office</option><option>Retail</option><option>Industrial</option><option>Residential</option></datalist></div>
+    <div class="col-12"><label asp-for="Property.AddressLine1" class="form-label">Address</label><input asp-for="Property.AddressLine1" class="form-control" /><span asp-validation-for="Property.AddressLine1" class="text-danger small"></span></div>
+    <div class="col-md-6"><label asp-for="Property.City" class="form-label"></label><input asp-for="Property.City" class="form-control" /><span asp-validation-for="Property.City" class="text-danger small"></span></div>
+    <div class="col-md-2"><label asp-for="Property.State" class="form-label"></label><input asp-for="Property.State" class="form-control" /><span asp-validation-for="Property.State" class="text-danger small"></span></div>
+    <div class="col-md-4"><label asp-for="Property.PostalCode" class="form-label">Postal code</label><input asp-for="Property.PostalCode" class="form-control" /><span asp-validation-for="Property.PostalCode" class="text-danger small"></span></div>
+    <div class="col-12"><label asp-for="UnitNumbers" class="form-label">Unit numbers (comma separated)</label><input asp-for="UnitNumbers" class="form-control" placeholder="101, 102, 201" /></div>
+    <div class="col-12"><button type="submit" class="btn btn-primary">Create</button> <a class="btn btn-link" asp-page="Index">Cancel</a></div>
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

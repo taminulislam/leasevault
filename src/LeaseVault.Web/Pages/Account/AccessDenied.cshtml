@@ -1,0 +1,10 @@
+@page
+@model LeaseVault.Web.Pages.Account.AccessDeniedModel
+@{
+    ViewData["Title"] = "Access denied";
+}
+<div class="alert alert-warning">
+    <h1 class="h5"><i class="bi bi-slash-circle me-1"></i>Access denied</h1>
+    <p class="mb-0">Your account is not a member of a group that may perform this action. Contact an administrator if you believe this is a mistake.</p>
+</div>
+<a class="btn btn-outline-secondary" asp-page="/Index">Back to dashboard</a>

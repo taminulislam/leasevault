@@ -1,0 +1,22 @@
+@page
+@model LeaseVault.Web.Pages.Audit.IndexModel
+@{
+    ViewData["Title"] = "Audit log";
+}
+<h1 class="h3 mb-1">Audit log</h1>
+<p class="text-muted small">Append-only. Rows cannot be edited or deleted by the application; the persistence layer rejects any attempt.</p>
+<table class="table table-sm table-striped" data-table>
+    <thead><tr><th>Timestamp (UTC)</th><th>Actor</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
+    <tbody>
+    @foreach (var a in Model.Entries)
+    {
+        <tr>
+            <td data-order="@a.TimestampUtc.Ticks">@a.TimestampUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+            <td>@a.Actor</td>
+            <td><span class="badge text-bg-light border">@a.Action</span></td>
+            <td>@a.EntityType @(a.EntityId is null ? "" : "#" + a.EntityId)</td>
+            <td class="text-muted">@a.Details</td>
+        </tr>
+    }
+    </tbody>
+</table>

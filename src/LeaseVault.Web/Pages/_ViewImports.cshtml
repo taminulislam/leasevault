@@ -1,3 +1,8 @@
-﻿@using LeaseVault.Web
+@using LeaseVault.Web
+@using LeaseVault.Core.Domain
+@using LeaseVault.Core.Security
+@using LeaseVault.Web.Security
 @namespace LeaseVault.Web.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@inject LeaseVault.Core.Abstractions.ICurrentUser CurrentUser
+@inject AuthenticationMode AuthMode

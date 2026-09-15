@@ -1,0 +1,45 @@
+@page
+@model LeaseVault.Web.Pages.Approvals.IndexModel
+@{
+    ViewData["Title"] = "Approvals";
+}
+<h1 class="h3 mb-3">Approvals</h1>
+<div class="card mb-4">
+    <div class="card-header">In progress</div>
+    <table class="table table-sm table-hover mb-0">
+        <thead><tr><th>Document</th><th>Started</th><th>Current step</th><th>Waiting on</th><th>Due</th><th></th></tr></thead>
+        <tbody>
+        @if (Model.InProgress.Count == 0) { <tr><td colspan="6" class="text-muted">No workflows in progress.</td></tr> }
+        @foreach (var w in Model.InProgress)
+        {
+            var step = w.CurrentStep;
+            <tr class="@(step?.IsOverdue(Model.Now) == true ? "table-warning" : "")">
+                <td><a asp-page="/Documents/Details" asp-route-id="@w.DocumentId">@w.Document?.Title</a></td>
+                <td>@w.StartedUtc.ToString("yyyy-MM-dd") <small class="text-muted">@w.StartedBy</small></td>
+                <td>@step?.Order. @step?.Role</td>
+                <td>@string.Join(", ", step?.Actors ?? []) @if (Model.IsMine(step)) { <span class="badge text-bg-primary">you</span> }</td>
+                <td>@step?.DueUtc?.ToString("yyyy-MM-dd HH:mm") @if (step?.IsOverdue(Model.Now) == true) { <span class="badge text-bg-danger">overdue</span> }</td>
+                <td class="text-end"><a class="btn btn-sm btn-outline-primary" asp-page="Details" asp-route-id="@w.Id">Review</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+<div class="card">
+    <div class="card-header">Completed</div>
+    <table class="table table-sm mb-0" data-table>
+        <thead><tr><th>Document</th><th>Outcome</th><th>Started</th><th>Completed</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var w in Model.Completed)
+        {
+            <tr>
+                <td><a asp-page="/Documents/Details" asp-route-id="@w.DocumentId">@w.Document?.Title</a></td>
+                <td><span class="badge @(w.Status == WorkflowStatus.Approved ? "text-bg-success" : w.Status == WorkflowStatus.Rejected ? "text-bg-danger" : "text-bg-secondary")">@w.Status</span></td>
+                <td>@w.StartedUtc.ToString("yyyy-MM-dd")</td>
+                <td>@w.CompletedUtc?.ToString("yyyy-MM-dd")</td>
+                <td class="text-end"><a class="btn btn-sm btn-outline-secondary" asp-page="Details" asp-route-id="@w.Id">View</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

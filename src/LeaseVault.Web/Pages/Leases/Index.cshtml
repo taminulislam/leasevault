@@ -1,0 +1,33 @@
+@page
+@model LeaseVault.Web.Pages.Leases.IndexModel
+@{
+    ViewData["Title"] = "Leases";
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Leases</h1>
+    @if (CurrentUser.IsInGroup(GroupNames.Agents) || CurrentUser.IsInGroup(GroupNames.Admins))
+    {
+        <a class="btn btn-primary" asp-page="Create"><i class="bi bi-plus-lg me-1"></i>New lease</a>
+    }
+</div>
+<table class="table table-striped table-hover" data-table>
+    <thead><tr><th>Property</th><th>Unit</th><th>Tenant</th><th>Start</th><th>End</th><th class="text-end">Days left</th><th class="text-end">Monthly rent</th><th>Status</th><th class="text-end">Docs</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var l in Model.Leases)
+    {
+        var days = l.DaysUntilExpiry(Model.Today);
+        <tr>
+            <td>@l.Unit?.Property?.Name</td>
+            <td>@l.Unit?.UnitNumber</td>
+            <td>@l.Tenant?.Name</td>
+            <td>@l.StartDate.ToString("yyyy-MM-dd")</td>
+            <td>@l.EndDate.ToString("yyyy-MM-dd")</td>
+            <td class="text-end @(days < 0 ? "text-muted" : days <= 60 ? "text-danger fw-semibold" : "")">@days</td>
+            <td class="text-end">@l.MonthlyRent.ToString("C0")</td>
+            <td><span class="badge @(l.Status == LeaseStatus.Expiring ? "text-bg-warning" : l.Status == LeaseStatus.Active ? "text-bg-success" : "text-bg-light border")">@l.Status</span></td>
+            <td class="text-end">@l.Documents.Count</td>
+            <td class="text-end"><a class="btn btn-sm btn-outline-primary" asp-page="Details" asp-route-id="@l.Id">Open</a></td>
+        </tr>
+    }
+    </tbody>
+</table>

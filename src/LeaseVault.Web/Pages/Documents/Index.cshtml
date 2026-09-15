@@ -1,0 +1,34 @@
+@page
+@model LeaseVault.Web.Pages.Documents.IndexModel
+@{
+    ViewData["Title"] = "Documents";
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Documents</h1>
+    <div>
+        <a class="btn btn-outline-secondary" asp-page="/Search/Index"><i class="bi bi-search me-1"></i>Full-text search</a>
+        @if (CurrentUser.IsInGroup(GroupNames.Agents) || CurrentUser.IsInGroup(GroupNames.Admins))
+        {
+            <a class="btn btn-primary" asp-page="Create"><i class="bi bi-plus-lg me-1"></i>New document</a>
+        }
+    </div>
+</div>
+<table class="table table-striped table-hover" data-table>
+    <thead><tr><th>Title</th><th>Category</th><th>Property</th><th>Tenant</th><th>Tags</th><th>Version</th><th>Status</th><th>Lock</th><th>Created</th></tr></thead>
+    <tbody>
+    @foreach (var d in Model.Documents)
+    {
+        <tr>
+            <td><a asp-page="Details" asp-route-id="@d.Id">@d.Title</a></td>
+            <td>@d.Category</td>
+            <td>@d.Property?.Name</td>
+            <td>@d.Tenant?.Name</td>
+            <td>@foreach (var t in d.TagValues) { <span class="badge text-bg-info tag-badge me-1">@t</span> }</td>
+            <td>v@(d.CurrentVersion)</td>
+            <td><span class="badge @(d.Status == DocumentStatus.Approved ? "text-bg-success" : d.Status == DocumentStatus.PendingApproval ? "text-bg-warning" : d.Status == DocumentStatus.Rejected ? "text-bg-danger" : "text-bg-light border")">@d.Status</span></td>
+            <td>@if (d.IsCheckedOut) { <i class="bi bi-lock-fill text-warning" title="Checked out by @d.CheckedOutBy"></i> <small>@d.CheckedOutBy</small> }</td>
+            <td data-order="@d.CreatedUtc.Ticks">@d.CreatedUtc.ToString("yyyy-MM-dd")</td>
+        </tr>
+    }
+    </tbody>
+</table>

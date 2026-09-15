@@ -1,0 +1,52 @@
+@page
+@model LeaseVault.Web.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h4 mb-3"><i class="bi bi-shield-lock me-1"></i>Sign in (development)</h1>
+                <p class="text-muted small">Entra ID single sign-on is not configured (<code>AzureAd:ClientId</code> is empty), so LeaseVault is using the local development directory.</p>
+                <form method="post" asp-route-returnUrl="@Model.ReturnUrl">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+                    <div class="mb-3">
+                        <label asp-for="Input.UserName" class="form-label">User name</label>
+                        <input asp-for="Input.UserName" class="form-control" list="dev-users" autocomplete="username" />
+                        <datalist id="dev-users">
+                            @foreach (var u in Model.SeededUsers)
+                            {
+                                <option value="@u.UserName">@u.DisplayName (@string.Join(", ", u.Groups))</option>
+                            }
+                        </datalist>
+                        <span asp-validation-for="Input.UserName" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.Password" class="form-label">Password</label>
+                        <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+                        <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Sign in</button>
+                </form>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-body small">
+                <h2 class="h6">Seeded users (password <code>@Model.Password</code>)</h2>
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>User</th><th>Groups</th></tr></thead>
+                    <tbody>
+                    @foreach (var u in Model.SeededUsers)
+                    {
+                        <tr><td>@u.UserName</td><td>@string.Join(", ", u.Groups)</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

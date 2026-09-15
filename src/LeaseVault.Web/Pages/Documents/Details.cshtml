@@ -1,0 +1,128 @@
+@page "{id:int}"
+@model LeaseVault.Web.Pages.Documents.DetailsModel
+@{
+    ViewData["Title"] = Model.Document.Title;
+    var d = Model.Document;
+}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-page="Index">Documents</a></li><li class="breadcrumb-item active">@d.Title</li></ol></nav>
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-1">@d.Title <span class="badge @(d.Status == DocumentStatus.Approved ? "text-bg-success" : d.Status == DocumentStatus.PendingApproval ? "text-bg-warning" : d.Status == DocumentStatus.Rejected ? "text-bg-danger" : "text-bg-light border") fs-6 align-middle">@d.Status</span></h1>
+        <div>@foreach (var t in d.TagValues) { <span class="badge text-bg-info tag-badge me-1">@t</span> }</div>
+    </div>
+    <div class="btn-group">
+        @if (Model.IsContributor)
+        {
+            @if (!d.IsCheckedOut && d.Status is not (DocumentStatus.Archived or DocumentStatus.Disposed))
+            {
+                <form method="post" asp-page-handler="CheckOut"><button class="btn btn-outline-primary"><i class="bi bi-lock me-1"></i>Check out</button></form>
+            }
+            @if (d.IsCheckedOut && Model.IsMine)
+            {
+                <form method="post" asp-page-handler="CheckIn"><button class="btn btn-outline-primary"><i class="bi bi-unlock me-1"></i>Check in</button></form>
+            }
+            @if (d.IsCheckedOut && !Model.IsMine && Model.IsAdmin)
+            {
+                <form method="post" asp-page-handler="ForceCheckIn" onsubmit="return confirm('Break the lock held by @d.CheckedOutBy?');"><button class="btn btn-outline-danger"><i class="bi bi-unlock me-1"></i>Break lock</button></form>
+            }
+            @if (Model.ActiveWorkflow is null && d.CurrentVersion > 0 && !d.IsCheckedOut && d.Status is DocumentStatus.Draft or DocumentStatus.Rejected)
+            {
+                <form method="post" asp-page-handler="Submit"><button class="btn btn-success"><i class="bi bi-send me-1"></i>Submit for approval</button></form>
+            }
+            @if (d.Status is not (DocumentStatus.Archived or DocumentStatus.Disposed) && !d.IsCheckedOut)
+            {
+                <form method="post" asp-page-handler="Archive" onsubmit="return confirm('Archive this document?');"><button class="btn btn-outline-secondary">Archive</button></form>
+            }
+            <a class="btn btn-outline-secondary" asp-page="Edit" asp-route-id="@d.Id">Edit metadata</a>
+        }
+    </div>
+</div>
+
+@if (d.IsCheckedOut)
+{
+    <div class="alert alert-warning py-2"><i class="bi bi-lock-fill me-1"></i>Checked out by <strong>@d.CheckedOutBy</strong> since @d.CheckedOutUtc?.ToString("yyyy-MM-dd HH:mm") UTC. @(Model.IsMine ? "You hold the lock: upload a new version, then check in." : "Other users cannot upload versions until it is checked in.")</div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header">Metadata</div>
+            <dl class="row card-body mb-0 small">
+                <dt class="col-5">Category</dt><dd class="col-7">@d.Category</dd>
+                <dt class="col-5">Property</dt><dd class="col-7">@if (d.Property != null) { <a asp-page="/Properties/Details" asp-route-id="@d.PropertyId">@d.Property.Name</a> }</dd>
+                <dt class="col-5">Tenant</dt><dd class="col-7">@d.Tenant?.Name</dd>
+                <dt class="col-5">Lease</dt><dd class="col-7">@if (d.Lease != null) { <a asp-page="/Leases/Details" asp-route-id="@d.LeaseId">@d.Lease.StartDate.ToString("yyyy-MM-dd") &rarr; @d.Lease.EndDate.ToString("yyyy-MM-dd")</a> }</dd>
+                <dt class="col-5">Created</dt><dd class="col-7">@d.CreatedUtc.ToString("yyyy-MM-dd") by @d.CreatedBy</dd>
+                <dt class="col-5">Current version</dt><dd class="col-7">v@(d.CurrentVersion)</dd>
+                <dt class="col-5">Retention</dt><dd class="col-7">@(Model.EffectivePolicy?.Name ?? "none") @if (Model.DisposalDate is DateOnly dd) { <br /><span class="text-muted">@Model.EffectivePolicy!.Action on @dd.ToString("yyyy-MM-dd")</span> }</dd>
+                <dt class="col-5">Description</dt><dd class="col-7">@d.Description</dd>
+            </dl>
+        </div>
+        @if (Model.CanUpload)
+        {
+            <div class="card mb-3">
+                <div class="card-header">Upload new version</div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" asp-page-handler="Upload">
+                        <input asp-for="Upload" type="file" class="form-control mb-2" required />
+                        <input asp-for="Comment" class="form-control mb-2" placeholder="What changed?" />
+                        <button class="btn btn-primary btn-sm"><i class="bi bi-cloud-upload me-1"></i>Upload v@(d.CurrentVersion + 1)</button>
+                    </form>
+                    <p class="text-muted small mt-2 mb-0">API: <code>POST /api/documents/@d.Id/versions?fileName=…</code> with the raw file as the body (chunked/streamed to <code>@Model.StorageProvider</code>).</p>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header">Version history</div>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Version</th><th>File</th><th class="text-end">Size</th><th>SHA-256</th><th>Uploaded</th><th>Comment</th><th></th></tr></thead>
+                <tbody>
+                @if (d.Versions.Count == 0) { <tr><td colspan="7" class="text-muted">No content uploaded yet.</td></tr> }
+                @foreach (var v in d.Versions.OrderByDescending(v => v.VersionNumber))
+                {
+                    <tr class="@(v.VersionNumber == d.CurrentVersion ? "table-primary" : "")">
+                        <td>v@(v.VersionNumber)</td>
+                        <td>@v.FileName</td>
+                        <td class="text-end">@((v.SizeBytes / 1024.0).ToString("N1")) KB</td>
+                        <td><code title="@v.Sha256">@v.Sha256[..12]…</code></td>
+                        <td>@v.UploadedUtc.ToString("yyyy-MM-dd HH:mm") <small class="text-muted">@v.UploadedBy</small></td>
+                        <td>@v.Comment</td>
+                        <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="/api/documents/@d.Id/versions/@v.VersionNumber"><i class="bi bi-download"></i></a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+            @if (Model.StoredObjects.Count > 0)
+            {
+                <div class="card-footer small text-muted">@Model.StorageProvider objects: @string.Join(", ", Model.StoredObjects.Select(o => System.IO.Path.GetFileName(o.Key) + (o.VersionId != null ? $" ({o.VersionId})" : "")))</div>
+            }
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between"><span>Approval chain</span>@if (Model.ActiveWorkflow != null) { <a class="small" asp-page="/Approvals/Details" asp-route-id="@Model.ActiveWorkflow.Id">open workflow</a> }</div>
+            <div class="card-body">
+                @if (Model.ActiveWorkflow is null && Model.PastWorkflows.Count == 0)
+                {
+                    <p class="text-muted mb-0">Not submitted for approval yet.</p>
+                }
+                @if (Model.ActiveWorkflow is { } wf)
+                {
+                    <partial name="_WorkflowSteps" model="wf" />
+                }
+                @foreach (var past in Model.PastWorkflows)
+                {
+                    <p class="small mb-1 mt-2"><strong>@past.Status</strong> workflow started @past.StartedUtc.ToString("yyyy-MM-dd") by @past.StartedBy@(past.CompletedUtc is DateTime c ? $", completed {c:yyyy-MM-dd}" : "") &middot; <a asp-page="/Approvals/Details" asp-route-id="@past.Id">details</a></p>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Audit trail (immutable)</div>
+            <ul class="list-group list-group-flush small">
+                @foreach (var a in Model.Audit) { <li class="list-group-item"><span class="text-muted">@a.TimestampUtc.ToString("yyyy-MM-dd HH:mm:ss")</span> <strong>@a.Actor</strong> @a.Action <span class="text-muted">@a.Details</span></li> }
+            </ul>
+        </div>
+    </div>
+</div>

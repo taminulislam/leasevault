@@ -1,0 +1,22 @@
+@page
+@model LeaseVault.Web.Pages.Documents.CreateModel
+@{
+    ViewData["Title"] = "New document";
+}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-page="Index">Documents</a></li><li class="breadcrumb-item active">New</li></ol></nav>
+<h1 class="h3">New document</h1>
+<form method="post" enctype="multipart/form-data" class="row g-3 col-lg-9">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="col-md-8"><label asp-for="Input.Title" class="form-label"></label><input asp-for="Input.Title" class="form-control" /><span asp-validation-for="Input.Title" class="text-danger small"></span></div>
+    <div class="col-md-4"><label asp-for="Input.Category" class="form-label"></label><select asp-for="Input.Category" asp-items="Model.CategoryOptions" class="form-select"></select></div>
+    <div class="col-12"><label asp-for="Input.Description" class="form-label"></label><textarea asp-for="Input.Description" class="form-control" rows="3"></textarea></div>
+    <div class="col-md-4"><label asp-for="Input.PropertyId" class="form-label">Property</label><select asp-for="Input.PropertyId" asp-items="Model.PropertyOptions" class="form-select"><option value="">(none)</option></select></div>
+    <div class="col-md-4"><label asp-for="Input.TenantId" class="form-label">Tenant</label><select asp-for="Input.TenantId" asp-items="Model.TenantOptions" class="form-select"><option value="">(none)</option></select></div>
+    <div class="col-md-4"><label asp-for="Input.LeaseId" class="form-label">Lease</label><select asp-for="Input.LeaseId" asp-items="Model.LeaseOptions" class="form-select"><option value="">(none)</option></select></div>
+    <div class="col-md-6"><label asp-for="Input.Tags" class="form-label"></label><input asp-for="Input.Tags" class="form-control" placeholder="lease, executed, office" /></div>
+    <div class="col-md-6"><label asp-for="Input.RetentionPolicyId" class="form-label">Retention policy</label><select asp-for="Input.RetentionPolicyId" asp-items="Model.PolicyOptions" class="form-select"><option value="">(resolve by category)</option></select></div>
+    <div class="col-md-8"><label asp-for="Upload" class="form-label">Initial file (optional)</label><input asp-for="Upload" type="file" class="form-control" /></div>
+    <div class="col-md-4"><label asp-for="Comment" class="form-label">Version comment</label><input asp-for="Comment" class="form-control" placeholder="Initial upload" /></div>
+    <div class="col-12"><button type="submit" class="btn btn-primary">Create</button> <a class="btn btn-link" asp-page="Index">Cancel</a></div>
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

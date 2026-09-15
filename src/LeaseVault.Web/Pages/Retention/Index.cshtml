@@ -1,0 +1,31 @@
+@page
+@model LeaseVault.Web.Pages.Retention.IndexModel
+@{
+    ViewData["Title"] = "Retention policies";
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Retention policies</h1>
+    <div>
+        <form method="post" asp-page-handler="Sweep" class="d-inline" onsubmit="return confirm('Run the retention sweep now? Documents past their retention period will be archived or disposed of.');"><button class="btn btn-outline-danger"><i class="bi bi-broom me-1"></i>Run sweep now</button></form>
+        <a class="btn btn-primary" asp-page="Edit"><i class="bi bi-plus-lg me-1"></i>New policy</a>
+    </div>
+</div>
+<p class="text-muted small">The retention clock starts at the lease end date (or the document's creation date when it is not tied to a lease). The <code>RetentionSweepService</code> applies these policies daily; the button runs the same sweep immediately.</p>
+<table class="table table-striped" data-table>
+    <thead><tr><th>Name</th><th>Category</th><th class="text-end">Years</th><th>Action</th><th>Legal hold</th><th class="text-end">Documents</th><th>Description</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var p in Model.Policies)
+    {
+        <tr>
+            <td>@p.Name</td>
+            <td>@(p.Category?.ToString() ?? "(any)")</td>
+            <td class="text-end">@p.RetentionYears</td>
+            <td><span class="badge @(p.Action == DisposalAction.Delete ? "text-bg-danger" : "text-bg-secondary")">@p.Action</span></td>
+            <td>@(p.LegalHold ? "yes" : "")</td>
+            <td class="text-end">@p.Documents.Count</td>
+            <td class="text-muted small">@p.Description</td>
+            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" asp-page="Edit" asp-route-id="@p.Id">Edit</a></td>
+        </tr>
+    }
+    </tbody>
+</table>

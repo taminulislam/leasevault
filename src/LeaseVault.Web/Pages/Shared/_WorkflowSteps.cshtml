@@ -1,0 +1,29 @@
+@model LeaseVault.Core.Domain.ApprovalWorkflow
+<div class="step-timeline">
+    @foreach (var s in Model.OrderedSteps)
+    {
+        var css = s.Status switch
+        {
+            StepStatus.Approved => "approved",
+            StepStatus.Rejected => "rejected",
+            StepStatus.Pending => "pending",
+            StepStatus.Skipped => "skipped",
+            _ => ""
+        };
+        <div class="step @css">
+            <div class="d-flex justify-content-between">
+                <strong>@s.Order. @s.Role</strong>
+                <span class="badge @(s.Status == StepStatus.Approved ? "text-bg-success" : s.Status == StepStatus.Rejected ? "text-bg-danger" : s.Status == StepStatus.Pending ? "text-bg-primary" : "text-bg-light border")">@s.Status</span>
+            </div>
+            <div class="small">
+                Assigned to <strong>@s.Assignee</strong>
+                @if (s.DelegatedTo != null) { <span>&middot; delegated to <strong>@s.DelegatedTo</strong></span> }
+                @if (s.EscalatedTo != null) { <span class="text-danger">&middot; escalated (#@s.EscalationCount) to <strong>@s.EscalatedTo</strong></span> }
+            </div>
+            <div class="small text-muted">
+                @if (s.Status == StepStatus.Pending) { <span>Due @s.DueUtc?.ToString("yyyy-MM-dd HH:mm") UTC @(s.IsOverdue(DateTime.UtcNow) ? " - OVERDUE" : "")</span> }
+                @if (s.DecidedUtc != null) { <span>Decided @s.DecidedUtc?.ToString("yyyy-MM-dd HH:mm") by @s.DecidedBy @(string.IsNullOrEmpty(s.Comment) ? "" : $"- \"{s.Comment}\"")</span> }
+            </div>
+        </div>
+    }
+</div>

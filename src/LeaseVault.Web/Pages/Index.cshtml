@@ -1,10 +1,101 @@
-﻿@page
+@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Dashboard";
 }
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Dashboard</h1>
+    <a class="btn btn-primary" asp-page="/Documents/Create"><i class="bi bi-plus-lg me-1"></i>New document</a>
+</div>
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg"><div class="card stat-card text-center"><div class="card-body"><div class="display-6">@Model.PropertyCount</div><div class="text-muted">Properties</div></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card text-center"><div class="card-body"><div class="display-6">@Model.ActiveLeaseCount</div><div class="text-muted">Active leases</div></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card text-center"><div class="card-body"><div class="display-6">@Model.DocumentCount</div><div class="text-muted">Documents</div></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card text-center"><div class="card-body"><div class="display-6">@Model.PendingApprovalCount</div><div class="text-muted">Approvals in progress</div></div></div></div>
+    <div class="col-6 col-lg"><div class="card stat-card text-center"><div class="card-body"><div class="display-6">@Model.CheckedOutCount</div><div class="text-muted">Checked out</div></div></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between"><span><i class="bi bi-inbox me-1"></i>My approval queue</span><a asp-page="/Approvals/Index" class="small">all approvals</a></div>
+            <div class="card-body p-0">
+                @if (Model.MyQueue.Count == 0)
+                {
+                    <p class="text-muted p-3 mb-0">Nothing waiting for you.</p>
+                }
+                else
+                {
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Document</th><th>Step</th><th>Due</th><th></th></tr></thead>
+                        <tbody>
+                        @foreach (var s in Model.MyQueue)
+                        {
+                            <tr class="@(s.DueUtc < DateTime.UtcNow ? "table-warning" : "")">
+                                <td>@s.Workflow?.Document?.Title</td>
+                                <td>@s.Role @(s.EscalatedTo != null ? "(escalated)" : s.DelegatedTo != null ? "(delegated)" : "")</td>
+                                <td>@s.DueUtc?.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td><a class="btn btn-sm btn-outline-primary" asp-page="/Approvals/Details" asp-route-id="@s.WorkflowId">Review</a></td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between"><span><i class="bi bi-calendar-event me-1"></i>Leases expiring within @Model.LeadDays days</span><a asp-page="/Leases/Index" class="small">all leases</a></div>
+            <div class="card-body p-0">
+                @if (Model.ExpiringLeases.Count == 0)
+                {
+                    <p class="text-muted p-3 mb-0">No leases expiring in the reminder window.</p>
+                }
+                else
+                {
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Property / unit</th><th>Tenant</th><th>Ends</th><th>Reminder</th></tr></thead>
+                        <tbody>
+                        @foreach (var l in Model.ExpiringLeases)
+                        {
+                            <tr>
+                                <td><a asp-page="/Leases/Details" asp-route-id="@l.Id">@l.Unit?.Property?.Name &middot; @l.Unit?.UnitNumber</a></td>
+                                <td>@l.Tenant?.Name</td>
+                                <td>@l.EndDate.ToString("yyyy-MM-dd")</td>
+                                <td>@(l.ExpiryReminderSentUtc is null ? "pending" : "sent " + l.ExpiryReminderSentUtc.Value.ToString("yyyy-MM-dd"))</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-file-earmark-text me-1"></i>Recent documents</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var d in Model.RecentDocuments)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><a asp-page="/Documents/Details" asp-route-id="@d.Id">@d.Title</a> <small class="text-muted">v@(d.CurrentVersion) &middot; @d.Property?.Name</small></span>
+                        <span class="badge text-bg-light border">@d.Status</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between"><span><i class="bi bi-journal-text me-1"></i>Recent audit activity</span><a asp-page="/Audit/Index" class="small">full log</a></div>
+            <ul class="list-group list-group-flush small">
+                @foreach (var a in Model.RecentAudit)
+                {
+                    <li class="list-group-item"><span class="text-muted">@a.TimestampUtc.ToString("MM-dd HH:mm")</span> <strong>@a.Actor</strong> @a.Action @a.EntityType #@a.EntityId <span class="text-muted">@a.Details</span></li>
+                }
+            </ul>
+        </div>
+    </div>
 </div>

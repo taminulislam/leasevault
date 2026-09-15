@@ -1,22 +1,61 @@
 html {
   font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
   position: relative;
   min-height: 100%;
 }
 
+@media (min-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+}
+
 body {
-  margin-bottom: 60px;
+  margin-bottom: 56px;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  white-space: nowrap;
+  line-height: 40px;
+  background: #f8f9fa;
+}
+
+.stat-card .display-6 {
+  font-weight: 600;
+}
+
+.facet-list .list-group-item {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+}
+
+.facet-list .list-group-item.active {
+  font-weight: 600;
+}
+
+.tag-badge {
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
+.step-timeline .step {
+  border-left: 3px solid #dee2e6;
+  padding-left: 1rem;
+  margin-bottom: 1rem;
+}
+
+.step-timeline .step.approved { border-color: #198754; }
+.step-timeline .step.rejected { border-color: #dc3545; }
+.step-timeline .step.pending { border-color: #0d6efd; }
+.step-timeline .step.skipped { border-color: #adb5bd; opacity: 0.7; }
+
+table.dataTable td.rank {
+  font-variant-numeric: tabular-nums;
+  color: #6c757d;
 }

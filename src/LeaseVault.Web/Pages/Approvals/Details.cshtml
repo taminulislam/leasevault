@@ -1,0 +1,57 @@
+@page "{id:int}"
+@model LeaseVault.Web.Pages.Approvals.DetailsModel
+@{
+    ViewData["Title"] = "Approval workflow";
+    var w = Model.Workflow;
+    var step = w.CurrentStep;
+}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-page="Index">Approvals</a></li><li class="breadcrumb-item active">Workflow #@w.Id</li></ol></nav>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">@w.Document?.Title <span class="badge @(w.Status == WorkflowStatus.Approved ? "text-bg-success" : w.Status == WorkflowStatus.Rejected ? "text-bg-danger" : w.Status == WorkflowStatus.InProgress ? "text-bg-warning" : "text-bg-secondary") fs-6 align-middle">@w.Status</span></h1>
+    <a class="btn btn-outline-secondary" asp-page="/Documents/Details" asp-route-id="@w.DocumentId">Open document</a>
+</div>
+<p class="text-muted small">Started @w.StartedUtc.ToString("yyyy-MM-dd HH:mm") UTC by @w.StartedBy &middot; step SLA @w.StepSlaHours h &middot; fallback owner @w.FallbackOwner</p>
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card"><div class="card-header">Chain: Agent &rarr; Legal &rarr; Owner</div><div class="card-body"><partial name="_WorkflowSteps" model="w" /></div></div>
+    </div>
+    <div class="col-lg-5">
+        @if (!w.IsComplete && step is not null)
+        {
+            <div class="card mb-3">
+                <div class="card-header">Decision (@step.Role step)</div>
+                <div class="card-body">
+                    @if (Model.CanAct)
+                    {
+                        <form method="post">
+                            <label asp-for="Comment" class="form-label">Comment <small class="text-muted">(required to reject)</small></label>
+                            <textarea asp-for="Comment" class="form-control mb-2" rows="3"></textarea>
+                            <button class="btn btn-success" asp-page-handler="Approve"><i class="bi bi-check-lg me-1"></i>Approve</button>
+                            <button class="btn btn-outline-danger" asp-page-handler="Reject"><i class="bi bi-x-lg me-1"></i>Reject</button>
+                        </form>
+                        <hr />
+                        <form method="post" asp-page-handler="Delegate" class="row g-2">
+                            <div class="col-8"><input asp-for="DelegateTo" class="form-control" placeholder="colleague@leasevault.local" /></div>
+                            <div class="col-4"><button class="btn btn-outline-primary w-100">Delegate</button></div>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">Waiting on @string.Join(" / ", step.Actors). Only those users (or an escalation target) may decide this step.</p>
+                    }
+                </div>
+            </div>
+            @if (Model.CanCancel)
+            {
+                <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Cancel this workflow? The document returns to Draft.');"><button class="btn btn-outline-secondary btn-sm">Cancel workflow</button></form>
+            }
+        }
+        <div class="card mt-3">
+            <div class="card-header">Audit</div>
+            <ul class="list-group list-group-flush small">
+                @if (Model.Audit.Count == 0) { <li class="list-group-item text-muted">No entries.</li> }
+                @foreach (var a in Model.Audit) { <li class="list-group-item"><span class="text-muted">@a.TimestampUtc.ToString("yyyy-MM-dd HH:mm")</span> <strong>@a.Actor</strong> @a.Action <span class="text-muted">@a.Details</span></li> }
+            </ul>
+        </div>
+    </div>
+</div>

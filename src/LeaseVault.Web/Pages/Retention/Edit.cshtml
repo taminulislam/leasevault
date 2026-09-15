@@ -1,0 +1,19 @@
+@page "{id:int?}"
+@model LeaseVault.Web.Pages.Retention.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "New retention policy" : "Edit retention policy";
+}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-page="Index">Retention</a></li><li class="breadcrumb-item active">@(Model.IsNew ? "New" : Model.Policy.Name)</li></ol></nav>
+<h1 class="h3">@ViewData["Title"]</h1>
+<form method="post" class="row g-3 col-lg-7">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Policy.Id" />
+    <div class="col-md-8"><label asp-for="Policy.Name" class="form-label"></label><input asp-for="Policy.Name" class="form-control" /><span asp-validation-for="Policy.Name" class="text-danger small"></span></div>
+    <div class="col-md-4"><label asp-for="Policy.Category" class="form-label"></label><select asp-for="Policy.Category" asp-items="Model.CategoryOptions" class="form-select"></select></div>
+    <div class="col-md-4"><label asp-for="Policy.RetentionYears" class="form-label">Retention (years)</label><input asp-for="Policy.RetentionYears" class="form-control" /><span asp-validation-for="Policy.RetentionYears" class="text-danger small"></span></div>
+    <div class="col-md-4"><label asp-for="Policy.Action" class="form-label">Action after retention</label><select asp-for="Policy.Action" asp-items="Model.ActionOptions" class="form-select"></select></div>
+    <div class="col-md-4 d-flex align-items-end"><div class="form-check"><input asp-for="Policy.LegalHold" class="form-check-input" /><label asp-for="Policy.LegalHold" class="form-check-label">Legal hold</label></div></div>
+    <div class="col-12"><label asp-for="Policy.Description" class="form-label"></label><textarea asp-for="Policy.Description" class="form-control" rows="2"></textarea></div>
+    <div class="col-12"><button type="submit" class="btn btn-primary">Save</button> <a class="btn btn-link" asp-page="Index">Cancel</a></div>
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

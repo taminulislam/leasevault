@@ -1,4 +1,13 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
-
-// Write your JavaScript code.
+// Shared UI helpers: initialise plain DataTables on any table marked data-table.
+(function ($) {
+    $(function () {
+        $('table[data-table]').each(function () {
+            $(this).DataTable({
+                pageLength: 15,
+                lengthMenu: [10, 15, 25, 50],
+                order: [],
+                stateSave: false
+            });
+        });
+    });
+})(jQuery);

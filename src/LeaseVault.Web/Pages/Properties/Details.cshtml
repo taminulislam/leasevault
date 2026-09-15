@@ -1,0 +1,30 @@
+@page "{id:int}"
+@model LeaseVault.Web.Pages.Properties.DetailsModel
+@{
+    ViewData["Title"] = Model.Property.Name;
+}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-page="Index">Properties</a></li><li class="breadcrumb-item active">@Model.Property.Name</li></ol></nav>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">@Model.Property.Name <small class="text-muted fs-6">@Model.Property.PropertyType</small></h1>
+    <a class="btn btn-outline-secondary" asp-page="Edit" asp-route-id="@Model.Property.Id">Edit</a>
+</div>
+<p class="text-muted">@Model.Property.AddressLine1, @Model.Property.City, @Model.Property.State @Model.Property.PostalCode</p>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card"><div class="card-header">Units</div>
+            <table class="table table-sm mb-0"><thead><tr><th>Unit</th><th>Floor</th><th class="text-end">Sq ft</th></tr></thead>
+            <tbody>@foreach (var u in Model.Property.Units.OrderBy(u => u.UnitNumber)) { <tr><td>@u.UnitNumber</td><td>@u.Floor</td><td class="text-end">@u.SquareFeet.ToString("N0")</td></tr> }</tbody></table>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card mb-3"><div class="card-header">Leases</div>
+            <table class="table table-sm mb-0"><thead><tr><th>Unit</th><th>Tenant</th><th>Term</th><th class="text-end">Rent</th><th>Status</th></tr></thead>
+            <tbody>@foreach (var l in Model.Leases) { <tr><td>@l.Unit?.UnitNumber</td><td>@l.Tenant?.Name</td><td><a asp-page="/Leases/Details" asp-route-id="@l.Id">@l.StartDate.ToString("yyyy-MM-dd") &rarr; @l.EndDate.ToString("yyyy-MM-dd")</a></td><td class="text-end">@l.MonthlyRent.ToString("C0")</td><td><span class="badge text-bg-light border">@l.Status</span></td></tr> }</tbody></table>
+        </div>
+        <div class="card"><div class="card-header">Documents</div>
+            <table class="table table-sm mb-0"><thead><tr><th>Title</th><th>Category</th><th>Tenant</th><th>Status</th></tr></thead>
+            <tbody>@foreach (var d in Model.Documents) { <tr><td><a asp-page="/Documents/Details" asp-route-id="@d.Id">@d.Title</a></td><td>@d.Category</td><td>@d.Tenant?.Name</td><td><span class="badge text-bg-light border">@d.Status</span></td></tr> }</tbody></table>
+        </div>
+    </div>
+</div>

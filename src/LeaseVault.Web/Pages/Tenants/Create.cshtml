@@ -1,0 +1,16 @@
+@page
+@model LeaseVault.Web.Pages.Tenants.CreateModel
+@{
+    ViewData["Title"] = "New tenant";
+}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-page="Index">Tenants</a></li><li class="breadcrumb-item active">New</li></ol></nav>
+<h1 class="h3">New tenant</h1>
+<form method="post" class="row g-3 col-lg-8">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="col-md-8"><label asp-for="Tenant.Name" class="form-label"></label><input asp-for="Tenant.Name" class="form-control" /><span asp-validation-for="Tenant.Name" class="text-danger small"></span></div>
+    <div class="col-md-4"><label asp-for="Tenant.Industry" class="form-label"></label><input asp-for="Tenant.Industry" class="form-control" /></div>
+    <div class="col-md-8"><label asp-for="Tenant.ContactEmail" class="form-label">Contact e-mail</label><input asp-for="Tenant.ContactEmail" class="form-control" /><span asp-validation-for="Tenant.ContactEmail" class="text-danger small"></span></div>
+    <div class="col-md-4"><label asp-for="Tenant.ContactPhone" class="form-label">Contact phone</label><input asp-for="Tenant.ContactPhone" class="form-control" /><span asp-validation-for="Tenant.ContactPhone" class="text-danger small"></span></div>
+    <div class="col-12"><button type="submit" class="btn btn-primary">Create</button> <a class="btn btn-link" asp-page="Index">Cancel</a></div>
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

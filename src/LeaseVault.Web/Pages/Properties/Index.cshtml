@@ -1,0 +1,31 @@
+@page
+@model LeaseVault.Web.Pages.Properties.IndexModel
+@{
+    ViewData["Title"] = "Properties";
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Properties</h1>
+    @if (CurrentUser.IsInGroup(GroupNames.Agents) || CurrentUser.IsInGroup(GroupNames.Admins))
+    {
+        <a class="btn btn-primary" asp-page="Create"><i class="bi bi-plus-lg me-1"></i>New property</a>
+    }
+</div>
+<table class="table table-striped table-hover" data-table>
+    <thead>
+        <tr><th>Name</th><th>Address</th><th>Type</th><th class="text-end">Units</th><th class="text-end">Sq ft</th><th class="text-end">Documents</th><th></th></tr>
+    </thead>
+    <tbody>
+    @foreach (var p in Model.Properties)
+    {
+        <tr>
+            <td><a asp-page="Details" asp-route-id="@p.Id">@p.Name</a></td>
+            <td>@p.AddressLine1, @p.City, @p.State @p.PostalCode</td>
+            <td>@p.PropertyType</td>
+            <td class="text-end">@p.Units.Count</td>
+            <td class="text-end">@p.Units.Sum(u => u.SquareFeet).ToString("N0")</td>
+            <td class="text-end">@p.Documents.Count</td>
+            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" asp-page="Edit" asp-route-id="@p.Id">Edit</a></td>
+        </tr>
+    }
+    </tbody>
+</table>

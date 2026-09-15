@@ -1,0 +1,64 @@
+@page "{id:int}"
+@model LeaseVault.Web.Pages.Leases.DetailsModel
+@{
+    ViewData["Title"] = $"Lease {Model.Lease.Unit?.Property?.Name} {Model.Lease.Unit?.UnitNumber}";
+    var days = Model.Lease.DaysUntilExpiry(Model.Today);
+}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a asp-page="Index">Leases</a></li><li class="breadcrumb-item active">@Model.Lease.Unit?.Property?.Name &middot; @Model.Lease.Unit?.UnitNumber</li></ol></nav>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">@Model.Lease.Tenant?.Name <span class="badge text-bg-light border fs-6 align-middle">@Model.Lease.Status</span></h1>
+    <div>
+        @if (Model.CanManage)
+        {
+            @if (Model.Lease.Status == LeaseStatus.Draft)
+            {
+                <form method="post" asp-page-handler="Activate" class="d-inline"><button class="btn btn-success">Activate</button></form>
+            }
+            @if (Model.Lease.Status is LeaseStatus.Active or LeaseStatus.Expiring or LeaseStatus.Draft)
+            {
+                <form method="post" asp-page-handler="Terminate" class="d-inline" onsubmit="return confirm('Terminate this lease?');"><button class="btn btn-outline-danger">Terminate</button></form>
+            }
+            <a class="btn btn-outline-secondary" asp-page="Edit" asp-route-id="@Model.Lease.Id">Edit</a>
+        }
+        <a class="btn btn-primary" asp-page="/Documents/Create" asp-route-leaseId="@Model.Lease.Id">Attach document</a>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Lease terms</div>
+            <dl class="row card-body mb-0 small">
+                <dt class="col-5">Property</dt><dd class="col-7"><a asp-page="/Properties/Details" asp-route-id="@Model.Lease.Unit?.PropertyId">@Model.Lease.Unit?.Property?.Name</a></dd>
+                <dt class="col-5">Unit</dt><dd class="col-7">@Model.Lease.Unit?.UnitNumber (@Model.Lease.Unit?.SquareFeet.ToString("N0") sq ft)</dd>
+                <dt class="col-5">Tenant contact</dt><dd class="col-7">@Model.Lease.Tenant?.ContactEmail</dd>
+                <dt class="col-5">Term</dt><dd class="col-7">@Model.Lease.StartDate.ToString("yyyy-MM-dd") &rarr; @Model.Lease.EndDate.ToString("yyyy-MM-dd")</dd>
+                <dt class="col-5">Days remaining</dt><dd class="col-7 @(days <= 60 && days >= 0 ? "text-danger fw-semibold" : "")">@days</dd>
+                <dt class="col-5">Monthly rent</dt><dd class="col-7">@Model.Lease.MonthlyRent.ToString("C2")</dd>
+                <dt class="col-5">Security deposit</dt><dd class="col-7">@Model.Lease.SecurityDeposit.ToString("C2")</dd>
+                <dt class="col-5">Expiry reminder</dt><dd class="col-7">@(Model.Lease.ExpiryReminderSentUtc?.ToString("yyyy-MM-dd HH:mm 'UTC'") ?? "not sent")</dd>
+                <dt class="col-5">Notes</dt><dd class="col-7">@Model.Lease.Notes</dd>
+            </dl>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header">Documents</div>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Title</th><th>Category</th><th>Version</th><th>Status</th><th>Tags</th></tr></thead>
+                <tbody>
+                @foreach (var d in Model.Documents)
+                {
+                    <tr><td><a asp-page="/Documents/Details" asp-route-id="@d.Id">@d.Title</a></td><td>@d.Category</td><td>v@(d.CurrentVersion)</td><td><span class="badge text-bg-light border">@d.Status</span></td><td>@foreach (var t in d.TagsText.Split(' ', StringSplitOptions.RemoveEmptyEntries)) { <span class="badge text-bg-info tag-badge me-1">@t</span> }</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <div class="card">
+            <div class="card-header">Audit trail</div>
+            <ul class="list-group list-group-flush small">
+                @if (Model.Audit.Count == 0) { <li class="list-group-item text-muted">No audit entries yet.</li> }
+                @foreach (var a in Model.Audit) { <li class="list-group-item"><span class="text-muted">@a.TimestampUtc.ToString("yyyy-MM-dd HH:mm")</span> <strong>@a.Actor</strong> @a.Action <span class="text-muted">@a.Details</span></li> }
+            </ul>
+        </div>
+    </div>
+</div>
