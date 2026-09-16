@@ -128,6 +128,9 @@ public sealed class DbSeeder
         // Fresh workflow waiting on the Agent.
         ApprovalWorkflow.Start(docs[2], "legal@leasevault.local", assignments, now.AddHours(-2), _approvals.StepSlaHours, _approvals.FallbackOwner);
 
+        // Persist the workflows first so the audit rows below can reference their real ids.
+        await _db.SaveChangesAsync(ct);
+
         _db.AuditEntries.AddRange(
             AuditEntry.Create("system", "Seeded", "Database", null, "Demo data created", now),
             AuditEntry.Create("agent@leasevault.local", AuditActions.WorkflowStarted, nameof(Document), docs[1].Id, "Renewal proposal submitted for approval", now.AddDays(-5)),
@@ -160,6 +163,9 @@ public sealed class DbSeeder
         _db.Documents.Add(document);
         await _db.SaveChangesAsync(ct); // need the id for storage keys
 
+        // Seeded documents carry the same audit provenance a real upload would produce.
+        _db.AuditEntries.Add(AuditEntry.Create(createdBy, AuditActions.Created, nameof(Document), document.Id, $"Title='{title}'", createdUtc));
+
         for (var v = 1; v <= versions; v++)
         {
             var fileName = $"{Slug(title)}-v{v}.txt";
@@ -168,6 +174,8 @@ public sealed class DbSeeder
             using var content = new MemoryStream(Encoding.UTF8.GetBytes(body));
             var stored = await _storage.UploadAsync(key, content, "text/plain", ct);
             document.AddVersion(createdBy, fileName, "text/plain", stored.SizeBytes, key, stored.Sha256, createdUtc.AddDays(v - 1), v == 1 ? "Initial upload" : "Revised terms");
+            _db.AuditEntries.Add(AuditEntry.Create(createdBy, AuditActions.VersionAdded, nameof(Document), document.Id,
+                $"v{v} {fileName} ({stored.SizeBytes} bytes)", createdUtc.AddDays(v - 1)));
         }
 
         return document;

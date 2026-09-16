@@ -108,6 +108,21 @@ public class ApiIntegrationTests : IClassFixture<LeaseVaultWebApplicationFactory
     }
 
     [Fact]
+    public async Task Search_accepts_cleared_facets_sent_as_empty_query_values()
+    {
+        // The DataTables grid sends propertyId=&tenantId=&tag= for cleared facets;
+        // these must not fail model binding with a 400.
+        var client = Client();
+
+        var response = await client.GetAsync("/api/search?draw=1&start=0&length=15&q=&propertyId=&tenantId=&tag=&status=&category=");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(json.GetProperty("recordsFiltered").GetInt32() > 0);
+        Assert.NotEmpty(json.GetProperty("data").EnumerateArray());
+    }
+
+    [Fact]
     public async Task Razor_pages_render_for_authenticated_user()
     {
         var client = Client();

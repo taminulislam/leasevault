@@ -31,7 +31,7 @@
     </div>
     <div class="col-lg-9">
         <table id="results" class="table table-striped table-hover w-100">
-            <thead><tr><th>Title</th><th>Category</th><th>Property</th><th>Tenant</th><th>Tags</th><th>Ver</th><th>Status</th><th>Created</th><th>Rank</th></tr></thead>
+            <thead><tr><th>Title</th><th>Category</th><th>Property</th><th>Tenant</th><th>Tags</th><th>Ver</th><th>Status</th><th>Created</th><th>Relevance</th></tr></thead>
         </table>
     </div>
 </div>
@@ -49,12 +49,14 @@
         ajax: {
             url: '/api/search',
             data: function (d) {
-                d.q = $('#q').val();
-                d.propertyId = filters.propertyId;
-                d.tenantId = filters.tenantId;
-                d.tag = filters.tag;
-                d.status = filters.status || $('#status').val();
-                d.category = $('#category').val();
+                // Only send facets that are actually set, so the query string stays clean.
+                var set = function (key, value) { if (value !== null && value !== undefined && value !== '') { d[key] = value; } };
+                set('q', $('#q').val());
+                set('propertyId', filters.propertyId);
+                set('tenantId', filters.tenantId);
+                set('tag', filters.tag);
+                set('status', filters.status || $('#status').val());
+                set('category', $('#category').val());
             },
             dataSrc: function (json) { renderFacets(json.facets); $('#provider').text(json.provider); return json.data; }
         },
@@ -67,7 +69,14 @@
             { data: 'version', render: function (v) { return 'v' + v; } },
             { data: 'status', render: function (s) { return '<span class="badge text-bg-light border">' + s + '</span>'; } },
             { data: 'createdUtc', render: function (d) { return d ? d.substring(0, 10) : ''; } },
-            { data: 'rank', className: 'rank' }
+            {
+                data: 'relevance',
+                className: 'rank',
+                render: function (r) {
+                    // Relative to the best hit for this query; blank when browsing without a search term.
+                    return r > 0 ? r + '%' : '';
+                }
+            }
         ]
     });
 
