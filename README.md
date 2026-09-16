@@ -15,6 +15,64 @@ full-text search, Azure Blob Storage versioning, Azure Functions, Azure AD SSO w
 managed identity, Serilog, App Service custom DNS and Azure DevOps; the code was later upgraded to
 .NET 8 (the Functions timers became hosted `BackgroundService`s inside the web app).
 
+## Live demo
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/taminulislam/leasevault?quickstart=1)
+
+Launch a Codespace, then run:
+
+```bash
+dotnet run --project src/LeaseVault.Web --urls http://localhost:5107
+```
+
+Open the forwarded port 5107 and sign in with `admin@leasevault.local` / `Passw0rd!` (the other
+seeded accounts are listed under [Run locally](#run-locally)). The demo runs entirely on SQLite
+with seeded demo data and documents stored on local disk - no Azure subscription, SQL Server,
+storage account or Entra tenant is required.
+
+## Screenshots
+
+### Dashboard
+Portfolio counters, the signed-in user's approval queue, leases entering the expiry window and
+recent audit activity.
+
+![Dashboard](docs/screenshots/01-dashboard.png)
+
+### Document library
+Every document with its property, tenant, tags, current version, workflow status and check-out
+lock, in a DataTables grid.
+
+![Document library](docs/screenshots/02-document-library.png)
+
+### Faceted full-text search
+SQLite FTS5 (or SQL Server full-text) results with facet counts by property, tenant, tag and
+status, plus a relevance score per hit.
+
+![Faceted full-text search](docs/screenshots/03-faceted-search.png)
+
+### Document detail and version history
+Immutable versions with SHA-256 and size per revision, the resolved retention policy and disposal
+date, and the upload/check-out controls.
+
+![Document detail and version history](docs/screenshots/04-document-versions.png)
+
+### Approvals queue
+Workflows in progress with the current step, who it is waiting on and overdue highlighting.
+
+![Approvals queue](docs/screenshots/05-approvals-queue.png)
+
+### Approval chain
+The Agent -> Legal -> Owner chain for one document - here the Legal step has passed its SLA and the
+background service has escalated it to the Owner.
+
+![Approval chain](docs/screenshots/06-approval-chain.png)
+
+### Immutable audit log
+Append-only trail of every create, version upload, check-out, approval, escalation, reminder and
+retention disposal.
+
+![Immutable audit log](docs/screenshots/07-audit-log.png)
+
 ## Architecture
 
 ```
@@ -26,7 +84,8 @@ LeaseVault.sln
 ├── db/fulltext.sql                SQL Server full-text catalog + index
 ├── infra/main.bicep               App Service + slot, Azure SQL, Storage, Key Vault, App Insights
 ├── azure-pipelines.yml            Build -> Test -> staging slot -> swap to production
-└── docs/                          ARCHITECTURE, DEPLOYMENT, CHANGE_MANAGEMENT
+├── docs/                          ARCHITECTURE, DEPLOYMENT, CHANGE_MANAGEMENT, screenshots/
+└── .devcontainer/                one-click GitHub Codespaces demo
 ```
 
 * **Core** holds the aggregates (`Document`, `Lease`, `ApprovalWorkflow`, ...) and the rules:
@@ -143,10 +202,6 @@ the real host with SQLite in-memory (`WebApplicationFactory`).
 * Secrets never live in the repo: connection strings and the Entra client secret are Key Vault
   references resolved through the web app's system-assigned managed identity, and blob access uses
   the same identity. Details in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
-
-## Screenshots
-
-_Coming soon: dashboard, document detail with version history and approval chain, faceted search._
 
 ## License
 

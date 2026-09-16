@@ -1,0 +1,19 @@
+{
+  "name": "LeaseVault (.NET 8)",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:1-8.0",
+  "forwardPorts": [5107],
+  "portsAttributes": {
+    "5107": {
+      "label": "LeaseVault web",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "postCreateCommand": "dotnet restore LeaseVault.sln && dotnet build LeaseVault.sln -c Debug",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csdevkit"
+      ]
+    }
+  }
+}
